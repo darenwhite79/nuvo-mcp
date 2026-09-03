@@ -1,0 +1,50 @@
+name: Проверки
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Поставить uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Зависимости
+        run: uv sync --python ${{ matrix.python }}
+
+      - name: Линтер
+        run: uv run ruff check .
+
+      - name: Форматирование
+        run: uv run ruff format --check .
+
+      - name: Тесты
+        run: uv run pytest -q
+
+  smoke:
+    name: Запускается как есть
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      # Без ключа сервер обязан объясниться человеческими словами, а не упасть
+      # трейсбеком: это первое, что видит человек, поставивший пакет.
+      - name: Без ключа — понятный отказ
+        run: |
+          out=$(uvx --from . nuvo-mcp 2>&1 || true)
+          echo "$out"
+          echo "$out" | grep -q "NUVO_TOKEN" || { echo "Не объяснился про ключ"; exit 1; }
+          echo "$out" | grep -qi "traceback" && { echo "Упал трейсбеком"; exit 1; }
+          exit 0

@@ -1,0 +1,56 @@
+[project]
+name = "nuvo-mcp"
+version = "0.1.0"
+description = "MCP-сервер к делам Nuvo: агент ведёт задачи через тот же HTTP API, что и приложение"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["mcp", "model-context-protocol", "nuvo", "tasks", "todo", "gtd"]
+authors = [{ name = "Igor T" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Scheduling",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "mcp>=2.1.1",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+nuvo-mcp = "nuvo_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/darenwhite79/nuvo-mcp"
+Repository = "https://github.com/darenwhite79/nuvo-mcp"
+Changelog = "https://github.com/darenwhite79/nuvo-mcp/blob/main/CHANGELOG.md"
+"Приложение" = "https://github.com/darenwhite79/nuvo-task-manager"
+Issues = "https://github.com/darenwhite79/nuvo-mcp/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nuvo_mcp"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
