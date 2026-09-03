@@ -1,9 +1,10 @@
-"""Подложный сервер вместо настоящего.
+"""A stand-in server instead of the real one.
 
-Пакет не зависит от бэкенда, поэтому и его тесты не поднимают ни FastAPI, ни
-базу: HTTP подменяется транспортом httpx. Здесь проверяется, что инструмент
-шлёт — какой метод, куда и с каким телом. Что на это ответит настоящее API,
-проверяют тесты бэкенда (`backend/tests/test_mcp.py`).
+The package does not depend on the backend, so neither do its tests: they bring
+up no FastAPI and no database, and HTTP is replaced by an httpx transport. What
+is checked here is what a tool sends — which method, where and with what body.
+What the real API answers to that is checked by the backend's own tests
+(`backend/tests/test_mcp.py`).
 """
 
 import json
@@ -17,7 +18,7 @@ from nuvo_mcp.api import NuvoApi
 
 TASK_FIELDS: dict[str, Any] = {
     "id": 1,
-    "title": "Дело",
+    "title": "A task",
     "notes": "",
     "area_id": None,
     "project_id": None,
@@ -45,7 +46,7 @@ TASK_FIELDS: dict[str, Any] = {
 
 
 def task(**changed: Any) -> dict[str, Any]:
-    """Дело со всеми полями снимка: инструменты читают их без оглядки."""
+    """A task with every field of the snapshot: tools read them without looking."""
 
     return TASK_FIELDS | changed
 
@@ -80,7 +81,7 @@ class Sent:
 
 @dataclass
 class Fake:
-    """Записывает отправленное и отдаёт заранее оговорённый снимок."""
+    """Records what was sent and returns the snapshot agreed on in advance."""
 
     state: dict[str, Any]
     api: NuvoApi = field(init=False)

@@ -1,4 +1,4 @@
-name: Проверки
+name: Checks
 
 on:
   push:
@@ -15,36 +15,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Поставить uv
+      - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
-      - name: Зависимости
+      - name: Dependencies
         run: uv sync --python ${{ matrix.python }}
 
-      - name: Линтер
+      - name: Lint
         run: uv run ruff check .
 
-      - name: Форматирование
+      - name: Formatting
         run: uv run ruff format --check .
 
-      - name: Тесты
+      - name: Tests
         run: uv run pytest -q
 
   smoke:
-    name: Запускается как есть
+    name: Runs as it is
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
 
-      # Без ключа сервер обязан объясниться человеческими словами, а не упасть
-      # трейсбеком: это первое, что видит человек, поставивший пакет.
-      - name: Без ключа — понятный отказ
+      # With no key the server has to explain itself in human words rather than
+      # die with a traceback: that is the first thing someone sees after
+      # installing the package.
+      - name: No key — a readable refusal
         run: |
           out=$(uvx --from . nuvo-mcp 2>&1 || true)
           echo "$out"
-          echo "$out" | grep -q "NUVO_TOKEN" || { echo "Не объяснился про ключ"; exit 1; }
-          echo "$out" | grep -qi "traceback" && { echo "Упал трейсбеком"; exit 1; }
+          echo "$out" | grep -q "NUVO_TOKEN" || { echo "Said nothing about the key"; exit 1; }
+          echo "$out" | grep -qi "traceback" && { echo "Died with a traceback"; exit 1; }
           exit 0

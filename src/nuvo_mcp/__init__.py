@@ -1,8 +1,8 @@
-"""MCP-сервер к делам Nuvo.
+"""An MCP server for Nuvo tasks.
 
-Пакет самодостаточен: из зависимостей только `mcp` и `httpx`, к бэкенду он
-ходит по HTTP, а не импортом. Поэтому ставится и запускается одной строкой —
-`uvx nuvo-mcp` — где бы ни лежало само приложение.
+The package stands on its own: `mcp` and `httpx` are the only dependencies, and
+it reaches the backend over HTTP rather than by import. That is why it installs
+and runs in a single line — `uvx nuvo-mcp` — wherever the app itself lives.
 """
 
 from nuvo_mcp.api import NoRight, NuvoApi, NuvoError

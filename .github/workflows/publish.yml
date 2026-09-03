@@ -1,8 +1,8 @@
-name: Выпуск в PyPI
+name: Release to PyPI
 
-# Тег вида v0.1.0 — и пакет уезжает в PyPI. Пароля здесь нет: PyPI доверяет
-# этому репозиторию по OIDC (Trusted Publisher), настраивается один раз на
-# стороне PyPI.
+# A tag like v0.1.0 and the package goes to PyPI. There is no password here:
+# PyPI trusts this repository over OIDC (Trusted Publisher), which is set up
+# once on the PyPI side.
 on:
   push:
     tags: ["v*"]

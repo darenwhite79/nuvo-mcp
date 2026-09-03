@@ -1,106 +1,108 @@
-# Подключение помощника к Nuvo (MCP)
+# Connecting an assistant to Nuvo (MCP)
 
-MCP — способ дать программе-помощнику те же права на дела, что есть у вас.
-Помощник ходит не в базу, а в то же HTTP-API, что и приложение: всё, что он
-сделал, видно в приложении сразу и записано в журнал ключа.
+MCP is a way to give an assistant program the same rights over your tasks that
+you have. The assistant does not reach into the database; it uses the same HTTP
+API as the app, so everything it does shows up in the app immediately and is
+written to the key's log.
 
-Готовые системные подсказки, чтобы помощник вёл дела осмысленно, лежат в
+Ready-made system prompts that make an assistant handle tasks sensibly live in
 [prompts.md](prompts.md).
 
-## Коротко
+## In short
 
-1. Поднимите приложение: `make api` (адрес `http://127.0.0.1:8000`).
-2. Выдайте ключ: «Настройки → Подключение» → «Выдать ключ». Токен показывается
-   один раз.
-3. Вставьте кусок настройки для своего клиента (ниже) и перезапустите его.
-4. Спросите помощника: «что у меня сегодня?» — должен ответить списком.
+1. Start the app: `make api` (address `http://127.0.0.1:8000`).
+2. Issue a key: Settings → Connection → Issue key. The token is shown once.
+3. Paste the configuration snippet for your client (below) and restart it.
+4. Ask the assistant "what do I have today?" — it should answer with a list.
 
-## Шаг 1. Где взять ключ
+## Step 1. Where to get a key
 
-**В приложении.** Подвал боковой панели → «Настройки» → «Подключение». Отметьте
-права и нажмите «Выдать ключ»:
+**In the app.** Foot of the sidebar → Settings → Connection. Tick the rights and
+press Issue key:
 
-| Право      | Что открывает                          |
-|------------|----------------------------------------|
-| `read`     | Списки и дела                          |
-| `create`   | Новые дела, проекты, области, теги     |
-| `edit`     | Правку, в том числе завершение         |
-| `delete`   | Окончательное удаление из корзины      |
+| Right      | What it opens                             |
+|------------|-------------------------------------------|
+| `read`     | Lists and tasks                           |
+| `create`   | New tasks, projects, areas, tags           |
+| `edit`     | Editing, including completing              |
+| `delete`   | Permanent deletion from the trash          |
 
-Помощнику обычно хватает `read,create,edit`. Права `delete` он не использует:
-инструмента окончательного удаления у него нет намеренно.
+`read,create,edit` is usually enough for an assistant. It never uses `delete`:
+it has no permanent-deletion tool, on purpose.
 
-На том же экране лежит готовый блок настройки — с подставленным ключом и путём.
-Скопируйте его кнопкой и переходите к шагу 2.
+The same screen has a ready-made configuration block, with your key and path
+already filled in. Copy it with the button and move on to step 2.
 
-**Своя установка — бесплатно, версия в Telegram — за звёзды.** Доступ снаружи
-(ключи API, MCP, вебхуки) в Telegram относится к платным возможностям: пока
-оплаты нет, выдача ключа отвечает `402` и словами объясняет, чего не хватает.
-На своей установке — той, что вы подняли у себя и куда не входят через
-Telegram, — платить не за что: ключи выдаются как раньше. Сам MCP-сервер к
-оплате отношения не имеет, но зависит от неё: платный тут сам доступ снаружи, а
-не разовая выдача. Кончился оплаченный срок — запрос по ключу отвечает `402`, и
-рассылка напоминаний перестаёт брать эти дела в расчёт. Дела при этом остаются
-на месте и никуда не деваются: приложение работает как работало, закрывается
-только дверь наружу; оплатите снова — тот же ключ заработает без перевыпуска.
+**Self-hosted is free; the Telegram version costs stars.** Access from outside
+(API keys, MCP, webhooks) is a paid capability in Telegram: until it is paid
+for, issuing a key answers `402` and explains in words what is missing. On a
+self-hosted install — the one you brought up yourself, which nobody signs into
+through Telegram — there is nothing to pay for: keys are issued as before. The
+MCP server itself has nothing to do with payment, but it depends on it: what is
+paid for is outside access as such, not a one-off key issue. When the paid
+period runs out, a request made with the key answers `402`, and the reminder
+mailout stops counting those tasks. The tasks themselves stay put and go
+nowhere: the app works as it worked, only the door to the outside closes. Pay
+again and the same key works without being reissued.
 
-Платными считаются только три вещи: напоминания с push, календарь дня с импортом
-ICS и доступ снаружи (ключи, MCP, вебхуки). Сами дела, проекты, области, списки,
-чек-листы, теги, заметки, повторы и поиск бесплатны и без ограничений по
-количеству, а **экспорт бесплатен навсегда**: забрать свои дела можно и после
-того, как оплата кончилась.
+Only three things are paid for: push reminders, the day calendar with ICS
+import, and access from outside (keys, MCP, webhooks). Tasks, projects, areas,
+lists, checklists, tags, notes, repeats and search are free and unlimited in
+number, and **export is free forever**: you can take your tasks with you even
+after the payment has run out.
 
-**Без интерфейса.** Локально ключи выдаются без ключа:
+**Without the interface.** Locally, keys are issued without a key:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/keys \
   -H 'Content-Type: application/json' \
-  -d '{"title":"Мой помощник","scopes":"read,create,edit"}'
+  -d '{"title":"My assistant","scopes":"read,create,edit"}'
 ```
 
-Ключ открывает всю базу, поэтому обращайтесь с ним как с паролем. Отзывается он
-там же, где выдан; журнал отозванного ключа остаётся.
+A key opens the whole database, so treat it like a password. It is revoked
+where it was issued; the log of a revoked key stays.
 
-## Шаг 2. Чем запускается сервер
+## Step 2. What starts the server
 
-Одной строкой, без клонирования репозитория:
+One line, with no cloning of the repository:
 
 ```bash
 NUVO_TOKEN=nv_… uvx nuvo-mcp
 ```
 
-> Пакета `nuvo-mcp` на PyPI пока нет. Пока его нет, везде ниже вместо
-> `uvx nuvo-mcp` пишите установку прямо из репозитория — клонировать всё равно
-> ничего не нужно:
+> The `nuvo-mcp` package is not on PyPI yet. Until it is, write installation
+> straight from the repository everywhere `uvx nuvo-mcp` appears below — there
+> is still nothing to clone:
 >
 > ```bash
 > NUVO_TOKEN=nv_… uvx --from git+https://github.com/darenwhite79/nuvo-mcp.git nuvo-mcp
 > ```
 >
-> То есть `"command": "uvx"`, а в `args` —
+> That is, `"command": "uvx"` and, in `args`,
 > `["--from", "git+https://github.com/darenwhite79/nuvo-mcp.git", "nuvo-mcp"]`.
-> Готовый блок с подставленным ключом есть на экране «Подключение» в приложении.
+> A ready block with the key filled in is on the Connection screen in the app.
 
-Нужен [uv](https://docs.astral.sh/uv/) (`brew install uv` или
-`curl -LsSf https://astral.sh/uv/install.sh | sh`). `uvx` ставит пакет во
-временное окружение сам — Python настраивать не надо.
+You need [uv](https://docs.astral.sh/uv/) (`brew install uv` or
+`curl -LsSf https://astral.sh/uv/install.sh | sh`). `uvx` installs the package
+into a temporary environment by itself — there is no Python to set up.
 
-| Переменная   | Обязательна | По умолчанию            | Что это                              |
-|--------------|-------------|-------------------------|--------------------------------------|
-| `NUVO_TOKEN` | да          | —                       | Ключ доступа с шага 1                |
-| `NUVO_URL`   | нет         | `http://127.0.0.1:8000` | Адрес, на котором поднято приложение |
+| Variable     | Required | Default                 | What it is                        |
+|--------------|----------|-------------------------|-----------------------------------|
+| `NUVO_TOKEN` | yes      | —                       | The access key from step 1         |
+| `NUVO_URL`   | no       | `http://127.0.0.1:8000` | The address the app is running at  |
 
-Запуск без `NUVO_TOKEN` печатает, где взять ключ. Запуск при потушенном
-приложении печатает, что оно не отвечает, но сервер остаётся жив: порядок
-запуска редактора и приложения не важен.
+Started without `NUVO_TOKEN`, it prints where to get a key. Started while the
+app is down, it prints that the app is not answering but stays alive: the order
+in which the editor and the app start does not matter.
 
-## Шаг 3. Настройка клиента
+## Step 3. Configuring the client
 
 ### Claude Code
 
-Командой — самый короткий путь. `--` отделяет флаги Claude от команды запуска
-сервера, `-s user` делает сервер общим для всех проектов (`local` — только для
-текущего, `project` — в `.mcp.json` репозитория):
+The command is the shortest path. `--` separates Claude's own flags from the
+command that starts the server, and `-s user` makes the server shared across all
+projects (`local` — only the current one, `project` — in the repository's
+`.mcp.json`):
 
 ```bash
 claude mcp add nuvo -s user \
@@ -109,15 +111,15 @@ claude mcp add nuvo -s user \
   -- uvx nuvo-mcp
 ```
 
-Тем же одним куском JSON:
+The same thing as one piece of JSON:
 
 ```bash
 claude mcp add-json -s user nuvo \
   '{"type":"stdio","command":"uvx","args":["nuvo-mcp"],"env":{"NUVO_TOKEN":"nv_…","NUVO_URL":"http://127.0.0.1:8000"}}'
 ```
 
-Файлом — `~/.claude.json` (для `user`) или `.mcp.json` в корне проекта (для
-`project`):
+As a file — `~/.claude.json` (for `user`) or `.mcp.json` in the project root
+(for `project`):
 
 ```json
 {
@@ -135,24 +137,25 @@ claude mcp add-json -s user nuvo \
 }
 ```
 
-В `.mcp.json` ключ можно не писать открытым текстом: там работает подстановка
-`${NUVO_TOKEN}` и `${NUVO_URL:-http://127.0.0.1:8000}` из окружения.
+In `.mcp.json` the key need not be written in the clear: `${NUVO_TOKEN}` and
+`${NUVO_URL:-http://127.0.0.1:8000}` are expanded from the environment there.
 
-Проверка: `claude mcp list` покажет `nuvo` и состояние связи; в разговоре
-то же делает `/mcp`.
+To check: `claude mcp list` shows `nuvo` and the state of the connection; `/mcp`
+does the same inside a conversation.
 
-Источник: [code.claude.com/docs/en/mcp](https://code.claude.com/docs/en/mcp).
+Source: [code.claude.com/docs/en/mcp](https://code.claude.com/docs/en/mcp).
 
 ### Claude Desktop
 
-Настройки → Developer → Edit Config. Файл:
+Settings → Developer → Edit Config. The file:
 
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- Linux: **не подтверждено.** Приложение под Linux есть в бете, но путь к
-  конфигу в официальной документации не назван; ходовое
-  `~/.config/Claude/claude_desktop_config.json` встречается только в сторонних
-  руководствах. Надёжнее открыть файл через само меню Developer → Edit Config.
+- Linux: **not confirmed.** The Linux app exists in beta, but the official
+  documentation does not name the config path; the widely quoted
+  `~/.config/Claude/claude_desktop_config.json` shows up only in third-party
+  guides. It is safer to open the file through the Developer → Edit Config menu
+  itself.
 
 ```json
 {
@@ -169,18 +172,20 @@ claude mcp add-json -s user nuvo \
 }
 ```
 
-После правки приложение нужно закрыть полностью и открыть заново. Пути в `args`
-пишите абсолютными: у приложения своя рабочая директория. Проверка — шаг 4.
+After editing, the app has to be quit completely and opened again. Write paths
+in `args` as absolute ones: the app has a working directory of its own. To
+check, see step 4.
 
-Источник:
+Source:
 [modelcontextprotocol.io/docs/develop/connect-local-servers](https://modelcontextprotocol.io/docs/develop/connect-local-servers).
 
 ### Cursor
 
-`~/.cursor/mcp.json` (для всех проектов) или `.cursor/mcp.json` (для одного).
-Транспорт Cursor определяет по полям: локальный сервер задаётся `command`
-(с `args` и `env`), удалённый — `url`. Отдельного поля `type` в примерах
-официальной документации нет, для stdio оно не нужно:
+`~/.cursor/mcp.json` (for every project) or `.cursor/mcp.json` (for one). Cursor
+works out the transport from the fields: a local server is given by `command`
+(with `args` and `env`), a remote one by `url`. There is no separate `type`
+field in the examples in the official documentation, and stdio does not need
+one:
 
 ```json
 {
@@ -197,13 +202,13 @@ claude mcp add-json -s user nuvo \
 }
 ```
 
-**Ссылка-установщик.** Cursor понимает диплинк вида
+**An install link.** Cursor understands a deeplink of the form
 
 ```
-cursor://anysphere.cursor-deeplink/mcp/install?name=nuvo&config=<base64 от JSON>
+cursor://anysphere.cursor-deeplink/mcp/install?name=nuvo&config=<base64 of the JSON>
 ```
 
-где `config` — строка JSON, закодированная base64. Свою ссылку соберёте так:
+where `config` is a JSON string encoded in base64. Build your own like this:
 
 ```bash
 python3 -c '
@@ -212,27 +217,30 @@ config = {"command": "uvx", "args": ["nuvo-mcp"],
           "env": {"NUVO_TOKEN": sys.argv[1], "NUVO_URL": "http://127.0.0.1:8000"}}
 packed = base64.b64encode(json.dumps(config).encode()).decode()
 print(f"cursor://anysphere.cursor-deeplink/mcp/install?name=nuvo&config={packed}")
-' nv_ваш_ключ
+' nv_your_key
 ```
 
-Тело `config` — **голый** объект настройки одного сервера
-(`{"command": …, "args": […], "env": {…}}`), без обёртки именем: имя сервера
-Cursor берёт из отдельного обязательного параметра `name`. Скрипт выше кодирует
-ровно это. Проверено по официальному примеру: диплинк из документации Cursor —
-`cursor://…/mcp/install?name=postgres&config=<base64>`, и раскодированный
-`config` внутри равен `{"command":"npx","args":[…]}` — без ключа `postgres`.
-Рядом на той же странице конфиг одного сервера показан в виде для `mcp.json`,
-завёрнутым в имя (`{"postgres": {…}}`), — это обёртка файла, а не тела ссылки;
-их легко перепутать. И помните, что ключ окажется в ссылке: её не стоит никуда
-пересылать.
+The body of `config` is the **bare** configuration object of a single server
+(`{"command": …, "args": […], "env": {…}}`), with no name wrapped around it:
+Cursor takes the server name from the separate, required `name` parameter. The
+script above encodes exactly that. Checked against the official example: the
+deeplink in Cursor's documentation is
+`cursor://…/mcp/install?name=postgres&config=<base64>`, and the decoded `config`
+inside it is `{"command":"npx","args":[…]}` — with no `postgres` key. Right next
+to it on the same page, the configuration of a single server is shown in its
+`mcp.json` form, wrapped in its name (`{"postgres": {…}}`) — that is the
+wrapping of the file, not of the link body, and the two are easy to confuse. And
+remember that the key ends up inside the link: it should not be forwarded
+anywhere.
 
-Источники: [cursor.com/docs/context/mcp](https://cursor.com/docs/context/mcp),
+Sources: [cursor.com/docs/context/mcp](https://cursor.com/docs/context/mcp),
 [cursor.com/docs/mcp/install-links](https://cursor.com/docs/mcp/install-links).
 
 ### VS Code + GitHub Copilot
 
-Ключ верхнего уровня здесь `servers`, а не `mcpServers`. Ключ доступа лучше не
-писать в файл, а спрашивать при первом запуске — для этого есть `inputs`:
+The top-level key here is `servers`, not `mcpServers`. It is better not to write
+the access key into the file but to ask for it on first run — that is what
+`inputs` is for:
 
 ```json
 {
@@ -240,7 +248,7 @@ Cursor берёт из отдельного обязательного пара�
     {
       "type": "promptString",
       "id": "nuvo-token",
-      "description": "Ключ доступа Nuvo",
+      "description": "Nuvo access key",
       "password": true
     }
   ],
@@ -258,23 +266,24 @@ Cursor берёт из отдельного обязательного пара�
 }
 ```
 
-Файл кладут в `.vscode/mcp.json` (для проекта) или в профиль пользователя.
-Документация отдельно предупреждает: Agent Host читает не `.vscode/mcp.json`, а
-`.mcp.json` в корне рабочей папки либо `~/.copilot/mcp-config.json`.
+The file goes into `.vscode/mcp.json` (for a project) or into the user profile.
+The documentation warns separately: the Agent Host reads not
+`.vscode/mcp.json` but `.mcp.json` in the root of the working folder, or
+`~/.copilot/mcp-config.json`.
 
-Командой:
+By command:
 
 ```bash
 code --add-mcp "{\"name\":\"nuvo\",\"command\":\"uvx\",\"args\":[\"nuvo-mcp\"]}"
 ```
 
-**Не проверено:** передача `env` внутри `--add-mcp`. В документированном примере
-есть только `name`, `command` и `args`, схема флага не опубликована — ключ
-надёжнее дописать файлом.
+**Not verified:** passing `env` inside `--add-mcp`. The documented example has
+only `name`, `command` and `args`, and the schema of the flag is not published —
+the key is safer added through the file.
 
-Инструменты видны в чате Copilot в режиме Agent. Проверка — шаг 4.
+The tools show up in the Copilot chat in Agent mode. To check, see step 4.
 
-Источники:
+Sources:
 [VS Code MCP configuration](https://code.visualstudio.com/docs/agents/reference/mcp-configuration),
 [VS Code: use MCP servers](https://code.visualstudio.com/docs/copilot/customization/mcp-servers).
 
@@ -297,13 +306,13 @@ code --add-mcp "{\"name\":\"nuvo\",\"command\":\"uvx\",\"args\":[\"nuvo-mcp\"]}"
 }
 ```
 
-Источник: [docs.windsurf.com/windsurf/cascade/mcp](https://docs.windsurf.com/windsurf/cascade/mcp).
+Source: [docs.windsurf.com/windsurf/cascade/mcp](https://docs.windsurf.com/windsurf/cascade/mcp).
 
 ### Zed
 
-Здесь MCP-серверы называются context servers, и ключ в `settings.json` —
-`context_servers`. Файл открывается действием `zed::OpenSettingsFile`; то же
-самое делает Settings → AI → MCP Servers → Add Server → Add Local Server.
+Here MCP servers are called context servers, and the key in `settings.json` is
+`context_servers`. The file is opened by the `zed::OpenSettingsFile` action; so
+does Settings → AI → MCP Servers → Add Server → Add Local Server.
 
 ```json
 {
@@ -320,92 +329,95 @@ code --add-mcp "{\"name\":\"nuvo\",\"command\":\"uvx\",\"args\":[\"nuvo-mcp\"]}"
 }
 ```
 
-Источник: [zed.dev/docs/ai/mcp](https://zed.dev/docs/ai/mcp).
+Source: [zed.dev/docs/ai/mcp](https://zed.dev/docs/ai/mcp).
 
-### Claude.ai в браузере
+### Claude.ai in the browser
 
-**Так подключить нельзя, и дело не в настройках.** В вебе поддерживаются только
-удалённые MCP-серверы: соединение устанавливает не браузер, а инфраструктура
-Anthropic, поэтому сервер обязан быть доступен из интернета по публичному
-адресу. `uvx nuvo-mcp` на вашем ноутбуке под это не подходит в принципе — как и
-любой сервер за VPN или файрволом. Локальные серверы из
-`claude_desktop_config.json` — отдельный механизм, в вебе он не работает.
+**This cannot be connected, and the settings are not the reason.** The web only
+supports remote MCP servers: the connection is made not by the browser but by
+Anthropic's infrastructure, so the server has to be reachable from the internet
+at a public address. `uvx nuvo-mcp` on your laptop cannot fit that in principle —
+nor can any server behind a VPN or a firewall. Local servers from
+`claude_desktop_config.json` are a separate mechanism, and it does not work in
+the web.
 
-Чтобы дела Nuvo были видны в вебе, нужен отдельный публичный HTTP-эндпоинт MCP —
-такого у Nuvo пока нет. Появится он — подключение будет в разделе
-«Customize → Connectors» (для команд — «Organization settings → Connectors»),
-на тарифах Free, Pro, Max, Team и Enterprise; на Free разрешён один свой
-коннектор.
+For Nuvo tasks to be visible in the web, a separate public MCP HTTP endpoint is
+needed, and Nuvo does not have one yet. Once it does, connecting will live under
+Customize → Connectors (for teams, Organization settings → Connectors), on the
+Free, Pro, Max, Team and Enterprise plans; Free allows one custom connector.
 
-Пока что для веба остаётся обычный API: ключ и `curl` работают откуда угодно,
-если приложение выставлено наружу.
+For now the plain API is what remains for the web: a key and `curl` work from
+anywhere, as long as the app is exposed to the outside.
 
-Источник:
+Source:
 [support.claude.com — custom connectors using remote MCP](https://support.claude.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp).
 
-## Шаг 4. Проверить, что заработало
+## Step 4. Check that it works
 
-Спросите помощника: **«что у меня сегодня?»** Он должен позвать `today` и
-ответить списком. Дальше — «заведи дело „купить билеты“ на завтра».
+Ask the assistant: **"what do I have today?"** It should call `today` and answer
+with a list. Then try "add a task 'buy tickets' for tomorrow".
 
-Если ответа нет, смотрите по порядку:
+If there is no answer, go through this in order:
 
-| Что видно                                     | Что чинить                                                                 |
-|-----------------------------------------------|----------------------------------------------------------------------------|
-| «Не задан NUVO_TOKEN»                         | Ключ не доехал до сервера: проверьте `env` в настройке клиента.             |
-| «Nuvo не отвечает по адресу …»                | Приложение потушено — `make api`; либо `NUVO_URL` указывает не туда.        |
-| «Ключ неизвестен или отозван»                 | Ключ отозвали или скопировали не целиком. Выдайте новый.                    |
-| `402` при выдаче ключа или при работе по нему  | Версия в Telegram: доступ снаружи оплачивается звёздами, и оплата кончилась. Дела на месте, своей установки не касается. |
-| «У ключа нет права на это действие»           | Прав не хватает. Ключ с новыми правами выдаётся заново, старый не меняется. |
-| Сервера нет в списке клиента                  | Клиент не перезапущен, либо `uvx` не на `PATH` — проверьте `which uvx`.     |
+| What you see                                   | What to fix                                                                |
+|------------------------------------------------|----------------------------------------------------------------------------|
+| "NUVO_TOKEN is not set"                        | The key never reached the server: check `env` in the client configuration.  |
+| "Nuvo is not answering at …"                   | The app is down — `make api`; or `NUVO_URL` points elsewhere.               |
+| "The key is unknown or has been revoked"       | The key was revoked, or copied incompletely. Issue a new one.               |
+| `402` when issuing a key or when using it       | The Telegram version: outside access is paid for in stars, and the payment ran out. Tasks are untouched, and self-hosted installs are unaffected. |
+| "The key has no right to this action"          | Not enough rights. A key with new rights is issued afresh; the old one stays as it is. |
+| The server is missing from the client's list   | The client was not restarted, or `uvx` is not on `PATH` — check `which uvx`. |
 
-Руками, тем же способом, что и клиент:
+By hand, the same way the client does it:
 
 ```bash
 NUVO_TOKEN=nv_… uvx nuvo-mcp
 ```
 
-Живой сервер молчит и ждёт: он говорит по stdin/stdout, а жалобы пишет в stderr.
-Выход — Ctrl+C.
+A live server stays quiet and waits: it speaks over stdin/stdout and writes its
+complaints to stderr. Ctrl+C to quit.
 
-Что помощник сделал, видно в приложении: «Настройки → Подключение» → у ключа
-«Журнал». Туда попадают и отказы — видно, куда он пытался залезть без права.
+What the assistant has done is visible in the app: Settings → Connection → the
+key's Log. Refusals land there too — you can see where it tried to reach without
+the right.
 
-## Что помощник умеет
+## What the assistant can do
 
-Двадцать один инструмент. Полные описания — в [`src/nuvo_mcp/tools.py`](../src/nuvo_mcp/tools.py)
-(словарь `DESCRIPTIONS`), их же читает модель.
+Twenty-one tools. The full descriptions are in
+[`src/nuvo_mcp/tools.py`](../src/nuvo_mcp/tools.py) (the `DESCRIPTIONS` dict),
+and the model reads the very same ones.
 
-**Смотреть**
-`list_lists` — проекты, области, теги, сохранённые отборы ·
-`list_tasks` — дела с отбором по «когда», проекту или тегу ·
-`today` — что стоит на сегодня и что просрочено ·
-`search_tasks` — поиск по названию и заметке ·
-`get_task` — одно дело целиком.
+**Looking**
+`list_lists` — projects, areas, tags, saved filters ·
+`list_tasks` — tasks filtered by "when", project or tag ·
+`today` — what is on for today and what is overdue ·
+`search_tasks` — search by title and notes ·
+`get_task` — one task in full.
 
-**Заводить и менять**
-`create_task` · `update_task` · `add_note` — дописать к заметке абзац с датой ·
-`move_task` — в проект, в область или во «Входящие» ·
+**Creating and changing**
+`create_task` · `update_task` · `add_note` — append a dated paragraph to the
+notes · `move_task` — into a project, into an area or to the Inbox ·
 `create_project` · `create_area`.
 
-**Менять состояние**
-`schedule_task` — «Сегодня», «Вечером», «В любое время», «Когда-нибудь» или дата ·
-`complete_task` · `reopen_task` · `log_task` — убрать завершённое в журнал ·
-`trash_task` · `restore_task`.
+**Changing state**
+`schedule_task` — Today, This Evening, Anytime, Someday or a date ·
+`complete_task` · `reopen_task` · `log_task` — file a finished task in the
+Logbook · `trash_task` · `restore_task`.
 
-**Чек-лист и теги**
+**Checklists and tags**
 `add_checklist_item` · `check_checklist_item` · `tag_task` · `untag_task`.
 
-Чего нет намеренно: окончательного удаления. Корзину чистит человек.
+Deliberately missing: permanent deletion. Emptying the trash is the person's own
+job.
 
-## Оговорки
+## Caveats
 
-- **Ключ открывает всю базу.** Разделения «этот проект можно, тот нельзя» нет.
-  Выдавайте ключ с теми правами, которые нужны, и отзывайте, когда он больше не
-  нужен.
-- **Умные списки живут в приложении.** Через MCP доступны отборы по полям
-  («когда», проект, тег, срок) и отдельно `today`. «Запланировано», «В любое
-  время» и «Журнал» правилами не повторяются: копия неизбежно разошлась бы с
-  оригиналом.
-- **`uvx` тянет пакет из сети при первом запуске.** Дальше он берётся из кэша;
-  обновить — `uvx --refresh nuvo-mcp`.
+- **A key opens the whole database.** There is no "this project yes, that one
+  no". Issue a key with the rights that are needed, and revoke it when it is no
+  longer needed.
+- **The smart lists live in the app.** Through MCP you get filters over fields
+  ("when", project, tag, deadline) and `today` separately. Upcoming, Anytime and
+  the Logbook are not reimplemented as rules here: a copy would inevitably drift
+  away from the original.
+- **`uvx` pulls the package from the network on first run.** After that it comes
+  from the cache; to update it, `uvx --refresh nuvo-mcp`.

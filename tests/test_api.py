@@ -1,4 +1,4 @@
-"""Ошибки клиента: человек должен узнать, что чинить, а не увидеть трейсбек."""
+"""Client errors: the person has to learn what to fix, not to see a traceback."""
 
 import httpx
 import pytest
@@ -11,7 +11,7 @@ def api_answering(handler) -> NuvoApi:
     return NuvoApi("http://nuvo.test", "nv_test", client=client)
 
 
-def test_молчащий_сервер_называет_адрес_и_способ_поднять():
+def test_a_silent_server_names_the_address_and_how_to_start_it():
     def refuse(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("Connection refused", request=request)
 
@@ -22,8 +22,8 @@ def test_молчащий_сервер_называет_адрес_и_спосо
     assert "make api" in str(error.value)
 
 
-def test_отзыв_ключа_говорит_куда_идти_за_новым():
-    api = api_answering(lambda request: httpx.Response(401, json={"detail": "Ключ неизвестен"}))
+def test_a_revoked_key_says_where_to_get_a_new_one():
+    api = api_answering(lambda request: httpx.Response(401, json={"detail": "Unknown key"}))
 
     with pytest.raises(PermissionError) as error:
         api.state()
@@ -31,39 +31,41 @@ def test_отзыв_ключа_говорит_куда_идти_за_новым(
     assert "NUVO_TOKEN" in str(error.value)
 
 
-def test_нехватка_права_называет_список_прав():
-    api = api_answering(lambda request: httpx.Response(403, json={"detail": "нет права"}))
+def test_a_missing_right_names_the_list_of_rights():
+    api = api_answering(lambda request: httpx.Response(403, json={"detail": "no right"}))
 
     with pytest.raises(PermissionError) as error:
-        api.call("POST", "/api/tasks", json={"title": "Нельзя"})
+        api.call("POST", "/api/tasks", json={"title": "Not allowed"})
 
     assert "read, create, edit, delete" in str(error.value)
 
 
-def test_отказ_приложения_пересказывается_его_словами():
-    api = api_answering(lambda request: httpx.Response(409, json={"detail": "Сначала в корзину"}))
+def test_a_refusal_from_the_app_is_retold_in_its_own_words():
+    api = api_answering(
+        lambda request: httpx.Response(409, json={"detail": "Move it to the trash first"})
+    )
 
     with pytest.raises(NuvoError) as error:
         api.call("DELETE", "/api/tasks/1")
 
-    assert "Сначала в корзину" in str(error.value)
+    assert "Move it to the trash first" in str(error.value)
     assert "409" in str(error.value)
 
 
-def test_проверка_связи_молчит_когда_всё_цело():
+def test_the_connection_check_stays_quiet_when_all_is_well():
     api = api_answering(lambda request: httpx.Response(200, json={"status": "ok"}))
 
     assert api.reachable() is None
 
 
-def test_проверка_связи_отличает_чужой_сервер_от_молчания():
+def test_the_connection_check_tells_a_stranger_from_silence():
     api = api_answering(lambda request: httpx.Response(404, text="Not Found"))
 
-    assert "это не Nuvo" in (api.reachable() or "")
+    assert "it is not Nuvo" in (api.reachable() or "")
 
 
-def test_ключ_с_кириллицей_не_уходит_в_заголовок():
+def test_a_non_ascii_key_never_reaches_the_header():
     with pytest.raises(NuvoError) as error:
-        NuvoApi("http://nuvo.test", "nv_ключ")
+        NuvoApi("http://nuvo.test", "nv_clé")
 
-    assert "нелатинские" in str(error.value)
+    assert "non-ASCII" in str(error.value)

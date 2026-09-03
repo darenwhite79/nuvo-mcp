@@ -1,7 +1,7 @@
 [project]
 name = "nuvo-mcp"
 version = "0.1.0"
-description = "MCP-сервер к делам Nuvo: агент ведёт задачи через тот же HTTP API, что и приложение"
+description = "An MCP server for Nuvo tasks: an agent manages them through the same HTTP API as the app"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -30,7 +30,7 @@ nuvo-mcp = "nuvo_mcp.server:main"
 Homepage = "https://github.com/darenwhite79/nuvo-mcp"
 Repository = "https://github.com/darenwhite79/nuvo-mcp"
 Changelog = "https://github.com/darenwhite79/nuvo-mcp/blob/main/CHANGELOG.md"
-"Приложение" = "https://github.com/darenwhite79/nuvo-task-manager"
+"App" = "https://github.com/darenwhite79/nuvo-task-manager"
 Issues = "https://github.com/darenwhite79/nuvo-mcp/issues"
 
 [dependency-groups]
