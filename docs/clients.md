@@ -178,13 +178,14 @@ claude mcp add-json -s user nuvo \
 ### Cursor
 
 `~/.cursor/mcp.json` (для всех проектов) или `.cursor/mcp.json` (для одного).
-Поле `type` для stdio обязательно:
+Транспорт Cursor определяет по полям: локальный сервер задаётся `command`
+(с `args` и `env`), удалённый — `url`. Отдельного поля `type` в примерах
+официальной документации нет, для stdio оно не нужно:
 
 ```json
 {
   "mcpServers": {
     "nuvo": {
-      "type": "stdio",
       "command": "uvx",
       "args": ["nuvo-mcp"],
       "env": {
